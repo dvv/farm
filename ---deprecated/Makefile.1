@@ -1,0 +1,61 @@
+#
+# build haproxy and stunnel
+#
+# dronnikov@gmail.com 2011
+#
+
+HAPROXY=haproxy-1.5-dev6
+STUD=stud-latest
+ZEROMQ=zeromq-2.1.7
+
+all: bin
+
+bin: $(HAPROXY)/haproxy $(STUD)/stud
+	strip -s -o haproxy $(HAPROXY)/haproxy
+	strip -s -o stud $(STUD)/stud
+
+$(HAPROXY)/haproxy: $(HAPROXY)
+	make -C $^ TARGET=linux26
+
+$(HAPROXY): $(HAPROXY).tar.gz
+	tar xzpf $^
+
+$(HAPROXY).tar.gz:
+	wget http://haproxy.1wt.eu/download/1.5/src/devel/$(HAPROXY).tar.gz
+
+$(STUD)/stud: $(STUD)
+	dpkg -s libssl-dev
+	dpkg -s libev-dev
+	make -C $^
+
+$(STUD): $(STUD).tar.gz
+	tar xzpf $^
+	mv bumptech* $@
+
+$(STUD).tar.gz:
+	wget https://github.com/bumptech/stud/tarball/master -O $@
+
+install: bin
+	dpkg -s haproxy
+	# haproxy
+	-cp haproxy /usr/sbin
+	-rm /usr/bin/stunnel stunnel3 stunnel4
+	-cp stunnel /usr/bin
+	-mv /etc/haproxy/haproxy.cfg /etc/haproxy/haproxy.cfg.orig
+	cp haproxy.cfg /etc/haproxy/haproxy.cfg
+	# stud
+	cp stud /usr/local/bin
+	cp stud.init /etc/init.d/stud
+	mkdir -p /etc/stud
+	cp stud.pem /etc/stud/farm.pem
+
+uninstall:
+	rm /usr/local/bin/haproxy /usr/local/bin/stunnel
+
+clean:
+	rm -fr haproxy stud $(HAPROXY) $(STUD) $(ZEROMQ)
+
+distclean: clean
+	rm -fr $(HAPROXY).tar.gz $(STUD).tar.gz $(ZEROMQ).tar.gz
+
+.PHONY: all bin lib install uninstall clean distclean
