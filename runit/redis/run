@@ -1,0 +1,2 @@
+#!/bin/sh
+exec chpst -u redis /usr/local/bin/redis-server redis.conf 2>&1
