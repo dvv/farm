@@ -3,7 +3,7 @@
 
 Provides means to scale HTTP/HTTPS servers in unobtrusive way.
 Uses haproxy as reverse proxy and load balancer for HTTP, and stud as HTTPS terminator.
-Supports socket.io.
+Supports socket.io. Serves permissive Flash Sockets Policy.
 
 ## How to Install
 

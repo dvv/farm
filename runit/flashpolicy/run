@@ -1,0 +1,2 @@
+#!/bin/sh
+exec perl -T socketpolicy.pl 2>&1
