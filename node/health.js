@@ -5,7 +5,7 @@
  * Copyright(c) 2011 Vladimir Dronnikov <dronnikov@gmail.com>
  * MIT Licensed
  *
-*/
+ */
 
 /**
  * Listen to specified URL and respond with status 200
