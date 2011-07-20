@@ -31,7 +31,8 @@ $(STUD): $(STUD).tar.gz
 	mv bumptech* $@
 
 $(STUD).tar.gz:
-	wget https://github.com/bumptech/stud/tarball/master -O $@
+	#wget https://github.com/bumptech/stud/tarball/master -O $@
+	wget https://github.com/dvv/stud/tarball/master -O $@
 
 $(REDIS)/src/redis-server: $(REDIS)
 	make -C $^
