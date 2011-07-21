@@ -8,7 +8,13 @@ HAPROXY=haproxy-1.5-dev6
 STUD=stud-latest
 REDIS=redis-latest
 
-all: bin
+all: check bin
+
+check:
+	dpkg -s libssl-dev >/dev/null
+	dpkg -s libev-dev >/dev/null
+	dpkg -s runit >/dev/null
+	dpkg -s ipsvd >/dev/null
 
 bin: $(HAPROXY)/haproxy $(STUD)/stud $(REDIS)/src/redis-server
 
@@ -22,13 +28,12 @@ $(HAPROXY).tar.gz:
 	wget http://haproxy.1wt.eu/download/1.5/src/devel/$(HAPROXY).tar.gz
 
 $(STUD)/stud: $(STUD)
-	which dpkg && sudo dpkg -s libssl-dev || sudo emerge dev-libs/openssl
-	which dpkg && sudo dpkg -s libev-dev || sudo emerge dev-libs/libev
 	make -C $^
 
 $(STUD): $(STUD).tar.gz
 	tar xzpf $^
-	mv bumptech* $@
+	#mv bumptech* $@
+	mv dvv* $@
 
 $(STUD).tar.gz:
 	#wget https://github.com/bumptech/stud/tarball/master -O $@
@@ -45,26 +50,20 @@ $(REDIS).tar.gz:
 	wget https://github.com/antirez/redis/tarball/master -O $@
 
 install: bin
-	sudo install -s $(HAPROXY)/haproxy $(STUD)/stud $(REDIS)/src/redis-server $(REDIS)/src/redis-cli /usr/local/bin
-	-sudo useradd haproxy
-	-sudo useradd stud
-	-sudo useradd redis
-	if test -d /service ; then \
-		sudo cp -a runit/* /service ; \
-	elif sudo dpkg -s runit ; \
-		test -d /etc/service && sudo cp -a runit/* /etc/service ; \
-	fi
+	install -s $(HAPROXY)/haproxy $(STUD)/stud $(REDIS)/src/redis-server $(REDIS)/src/redis-cli /usr/local/bin
+	-useradd haproxy
+	-useradd stud
+	-useradd redis
+	cp -a runit/* /etc/service
 
 uninstall:
-	sudo rm -fr /usr/local/bin/haproxy /usr/local/bin/stud /usr/local/bin/redis-* /etc/service/haproxy /etc/service/stud /etc/service/redis
-	-sudo userdel redis
-	-sudo userdel stud
-	-sudo userdel haproxy
+	rm -fr /usr/local/bin/haproxy /usr/local/bin/stud /usr/local/bin/redis-* /etc/service/haproxy /etc/service/stud /etc/service/redis
+	-userdel redis
+	-userdel stud
+	-userdel haproxy
 
 clean:
 	rm -fr $(HAPROXY) $(STUD) $(REDIS)
-
-distclean: clean
 	rm -fr $(HAPROXY).tar.gz $(STUD).tar.gz $(REDIS).tar.gz
 
-.PHONY: all bin lib install uninstall clean distclean
+.PHONY: all check bin lib install uninstall clean

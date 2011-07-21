@@ -1,2 +1,2 @@
 #!/bin/sh
-exec perl -T socketpolicy.pl 2>&1
+exec tcpsvd -u haproxy 0.0.0.0 843 echo '<cross-domain-policy><allow-access-from domain="*" to-ports="*" /></cross-domain-policy>' 2>&1
