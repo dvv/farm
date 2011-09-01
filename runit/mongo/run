@@ -1,0 +1,4 @@
+#!/bin/sh
+mkdir -m 0750 -p /var/mongo
+chown mongo /var/mongo
+exec chpst -u mongo mongod --dbpath /var/mongo 2>&1

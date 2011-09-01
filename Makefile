@@ -7,6 +7,7 @@
 HAPROXY=haproxy-1.5-dev6
 STUD=stud-latest
 REDIS=redis-latest
+MONGO=mongodb-linux-i686-1.8.3
 
 all: check bin
 
@@ -16,7 +17,7 @@ check:
 	dpkg -s runit >/dev/null
 	dpkg -s ipsvd >/dev/null
 
-bin: $(HAPROXY)/haproxy $(STUD)/stud $(REDIS)/src/redis-server
+bin: $(MONGO)/bin/mongo $(HAPROXY)/haproxy $(STUD)/stud $(REDIS)/src/redis-server
 
 $(HAPROXY)/haproxy: $(HAPROXY)
 	make -C $^ TARGET=linux26
@@ -49,21 +50,32 @@ $(REDIS): $(REDIS).tar.gz
 $(REDIS).tar.gz:
 	wget https://github.com/antirez/redis/tarball/master -O $@
 
+$(MONGO)/bin/mongo: $(MONGO)
+	touch -c $@
+
+$(MONGO): $(MONGO).tgz
+	tar xzpf $^
+
+$(MONGO).tgz:
+	wget http://fastdl.mongodb.org/linux/$(MONGO).tgz -O $@
+
 install: bin
-	install -s $(HAPROXY)/haproxy $(STUD)/stud $(REDIS)/src/redis-server $(REDIS)/src/redis-cli /usr/local/bin
+	install -s $(HAPROXY)/haproxy $(STUD)/stud $(REDIS)/src/redis-server $(REDIS)/src/redis-cli $(MONGO)/bin/* /usr/local/bin
 	-useradd haproxy
 	-useradd stud
 	-useradd redis
+	-useradd mongo
 	cp -a runit/* /etc/service
 
 uninstall:
-	rm -fr /usr/local/bin/haproxy /usr/local/bin/stud /usr/local/bin/redis-* /etc/service/haproxy /etc/service/stud /etc/service/redis
+	rm -fr /usr/local/bin/haproxy /usr/local/bin/stud /usr/local/bin/redis-* /usr/local/bin/mongo* /usr/local/bin/bsondump /etc/service/haproxy /etc/service/stud /etc/service/redis /etc/service/mongo
+	-userdel mongo
 	-userdel redis
 	-userdel stud
 	-userdel haproxy
 
 clean:
-	rm -fr $(HAPROXY) $(STUD) $(REDIS)
-	rm -fr $(HAPROXY).tar.gz $(STUD).tar.gz $(REDIS).tar.gz
+	rm -fr $(HAPROXY) $(STUD) $(REDIS) $(MONGO)
+	rm -fr $(HAPROXY).tar.gz $(STUD).tar.gz $(REDIS).tar.gz $(MONGO).tgz
 
 .PHONY: all check bin lib install uninstall clean
