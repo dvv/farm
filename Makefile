@@ -5,22 +5,32 @@
 #
 
 HAPROXY=haproxy-1.5-dev6
+LIBEV=libev-4.04
 STUD=stud-latest
 REDIS=redis-latest
-MONGO=mongodb-linux-i686-1.8.3
+ARCH=$(shell uname)
+ifneq ($(ARCH),Darwin)
+	MONGO_OS=osx
+	MONGO=mongodb-osx-i386-1.8.3
+else
+	MONGO_OS=linux
+	MONGO=mongodb-linux-i686-1.8.3
+endif
+
+ROOT=$(shell pwd)
 
 all: check bin
 
 check:
-	dpkg -s libssl-dev >/dev/null
-	dpkg -s libev-dev >/dev/null
+	# FIXME: non-debians have no dpkg.
 	dpkg -s runit >/dev/null
 	dpkg -s ipsvd >/dev/null
 
-bin: $(MONGO)/bin/mongo $(HAPROXY)/haproxy $(STUD)/stud $(REDIS)/src/redis-server
+#bin: $(MONGO)/bin/mongo $(HAPROXY)/haproxy $(STUD)/stud $(REDIS)/src/redis-server
+bin: $(HAPROXY)/haproxy $(STUD)/stud $(REDIS)/src/redis-server
 
 $(HAPROXY)/haproxy: $(HAPROXY)
-	make -C $^ TARGET=linux26
+	make -C $^ TARGET=generic
 
 $(HAPROXY): $(HAPROXY).tar.gz
 	tar xzpf $^
@@ -28,17 +38,27 @@ $(HAPROXY): $(HAPROXY).tar.gz
 $(HAPROXY).tar.gz:
 	wget http://haproxy.1wt.eu/download/1.5/src/devel/$(HAPROXY).tar.gz
 
-$(STUD)/stud: $(STUD)
-	make -C $^
+$(STUD)/stud: $(STUD) $(LIBEV)/.libs/libev.a
+	#CFLAGS='-I$(ROOT)/$(LIBEV) -L$(ROOT)/$(LIBEV)/.libs' make -C $(STUD)
+	# N.B. to statically link with libev.a, had to override stud's Makefile
+	( cd $(STUD) ; gcc -O2 -g -std=c99 -fno-strict-aliasing -Wall -W -I$(ROOT)/$(LIBEV) -I. -o stud ringbuffer.c stud.c -D_GNU_SOURCE $(ROOT)/$(LIBEV)/.libs/libev.a -lm -lssl -lcrypto )
 
 $(STUD): $(STUD).tar.gz
 	tar xzpf $^
-	#mv bumptech* $@
-	mv dvv* $@
+	mv bumptech* $@
 
 $(STUD).tar.gz:
-	#wget https://github.com/bumptech/stud/tarball/master -O $@
-	wget https://github.com/dvv/stud/tarball/master -O $@
+	wget https://github.com/bumptech/stud/tarball/master -O $@
+
+$(LIBEV)/.libs/libev.a: $(LIBEV)
+	(cd $^ ; ./configure)
+	make -C $^
+
+$(LIBEV): $(LIBEV).tar.gz
+	tar xzpf $^
+
+$(LIBEV).tar.gz:
+	wget http://dist.schmorp.de/libev/$(LIBEV).tar.gz
 
 $(REDIS)/src/redis-server: $(REDIS)
 	make -C $^
@@ -57,7 +77,10 @@ $(MONGO): $(MONGO).tgz
 	tar xzpf $^
 
 $(MONGO).tgz:
-	wget http://fastdl.mongodb.org/linux/$(MONGO).tgz -O $@
+	wget http://fastdl.mongodb.org/$(MONGO_OS)/$(MONGO).tgz -O $@
+
+#$(BUSYBOX):
+#	wget http://landley.net/aboriginal/downloads/binaries/root-filesystems/simple-root-filesystem-i686.tar.bz2
 
 install: bin
 	install -s $(HAPROXY)/haproxy $(STUD)/stud $(REDIS)/src/redis-server $(REDIS)/src/redis-cli $(MONGO)/bin/* /usr/local/bin
@@ -75,7 +98,7 @@ uninstall:
 	-userdel haproxy
 
 clean:
-	rm -fr $(HAPROXY) $(STUD) $(REDIS) $(MONGO)
-	rm -fr $(HAPROXY).tar.gz $(STUD).tar.gz $(REDIS).tar.gz $(MONGO).tgz
+	rm -fr $(HAPROXY) $(STUD) $(LIBEV) $(REDIS) $(MONGO)
+	rm -fr $(HAPROXY).tar.gz $(STUD).tar.gz $(LIBEV).tar.gz $(REDIS).tar.gz $(MONGO).tgz
 
 .PHONY: all check bin lib install uninstall clean
