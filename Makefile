@@ -12,9 +12,11 @@ ARCH=$(shell uname)
 ifeq ($(ARCH),Darwin)
 	MONGO_OS=osx
 	MONGO=mongodb-osx-i386-2.0.0
+	STUD_TARGET=stud
 else
 	MONGO_OS=linux
 	MONGO=mongodb-linux-i686-2.0.0
+	STUD_TARGET=stud-shared
 endif
 
 ROOT=$(shell pwd)
@@ -26,7 +28,7 @@ check:
 	dpkg -s runit >/dev/null
 	dpkg -s ipsvd >/dev/null
 
-bin: $(MONGO)/bin/mongo $(HAPROXY)/haproxy $(STUD)/stud-shared $(REDIS)/src/redis-server $(WEBFS)/webfsd
+bin: $(MONGO)/bin/mongo $(HAPROXY)/haproxy $(STUD)/$(STUD_TARGET) $(REDIS)/src/redis-server $(WEBFS)/webfsd
 
 $(HAPROXY)/haproxy: $(HAPROXY)
 	make -C $^ TARGET=generic
@@ -34,8 +36,8 @@ $(HAPROXY)/haproxy: $(HAPROXY)
 $(HAPROXY):
 	wget http://haproxy.1wt.eu/download/1.5/src/devel/$(HAPROXY).tar.gz -O - | tar -xzpf -
 
-$(STUD)/stud-shared: $(STUD)
-	make -C $^ stud-shared
+$(STUD)/$(STUD_TARGET): $(STUD)
+	make -C $^ $(STUD_TARGET)
 
 $(STUD):
 	wget https://github.com/dvv/stud/tarball/master -O - | tar -xzpf -
@@ -66,7 +68,7 @@ $(WEBFS):
 install: bin
 	install -s $(HAPROXY)/haproxy $(REDIS)/src/redis-server $(REDIS)/src/redis-cli $(WEBFS)/webfsd /usr/local/bin
 	install $(MONGO)/bin/* /usr/local/bin
-	install -s $(STUD)/stud-shared /usr/local/bin/stud
+	install -s $(STUD)/$(STUD_TARGET) /usr/local/bin/stud
 	-useradd haproxy
 	-useradd stud
 	-useradd redis
