@@ -7,7 +7,6 @@
 HAPROXY=haproxy-1.5-dev7
 STUD=stud-latest
 REDIS=redis-latest
-WEBFS=webfs-1.21
 RUNIT=runit-2.1.1
 IPSVD=ipsvd-1.0.0
 ARCH=$(shell uname)
@@ -27,7 +26,7 @@ all: check bin
 
 check:
 
-bin: $(MONGO)/bin/mongo $(HAPROXY)/haproxy $(STUD)/$(STUD_TARGET) $(REDIS)/src/redis-server $(WEBFS)/webfsd $(RUNIT)/runsvdir $(IPSVD)/tcpsvd
+bin: $(MONGO)/bin/mongo $(HAPROXY)/haproxy $(STUD)/$(STUD_TARGET) $(REDIS)/src/redis-server $(RUNIT)/runsvdir $(IPSVD)/tcpsvd
 
 $(HAPROXY)/haproxy: $(HAPROXY)
 	make -C $^ TARGET=generic
@@ -55,12 +54,6 @@ $(MONGO)/bin/mongo: $(MONGO)
 $(MONGO):
 	wget http://fastdl.mongodb.org/$(MONGO_OS)/$(MONGO).tgz -O - | tar -xzpf -
 
-$(WEBFS)/webfsd: $(WEBFS)
-	make -C $^
-
-$(WEBFS):
-	wget http://www.kraxel.org/releases/webfs/$(WEBFS).tar.gz -O - | tar -xzpf -
-
 busybox/busybox: busybox
 	make -C $^ defconfig
 	make -C $^
@@ -85,7 +78,7 @@ $(IPSVD):
 	rm -fr net
 
 install: bin
-	install -s $(HAPROXY)/haproxy $(REDIS)/src/redis-server $(REDIS)/src/redis-cli $(WEBFS)/webfsd /usr/local/bin
+	install -s $(HAPROXY)/haproxy $(REDIS)/src/redis-server $(REDIS)/src/redis-cli /usr/local/bin
 	install $(MONGO)/bin/* /usr/local/bin
 	install -s $(STUD)/$(STUD_TARGET) /usr/local/bin/stud
 	install -s $(RUNIT)/runsvdir $(RUNIT)/runsv $(RUNIT)/sv $(RUNIT)/chpst $(RUNIT)/svlogd /usr/local/bin
@@ -109,6 +102,6 @@ uninstall:
 	-userdel haproxy
 
 clean:
-	rm -fr $(HAPROXY) $(STUD) $(REDIS) $(MONGO) $(WEBFS) $(RUNIT) $(IPSVD)
+	rm -fr $(HAPROXY) $(STUD) $(REDIS) $(MONGO) $(RUNIT) $(IPSVD)
 
 .PHONY: all check bin lib install uninstall clean
