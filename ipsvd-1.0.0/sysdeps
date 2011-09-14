@@ -1,0 +1,18 @@
+linux-3.0.0-11-generic-:i386-:-:genuineintel-000006fd-bfebfbff-:-
+#!/bin/sh
+# WARNING: This file was auto-generated. Do not edit!
+exec gcc -O2 -Wall -c ${1+"$@"}
+#!/bin/sh
+# WARNING: This file was auto-generated. Do not edit!
+main="$1"; shift
+exec gcc -s -o "$main" "$main".o ${1+"$@"}
+/* sysdep: +dirent */
+/* sysdep: +waitpid */
+/* sysdep: +sigaction */
+/* sysdep: +sigprocmask */
+/* sysdep: +sysselect */
+/* sysdep: -ulong64 */
+/* sysdep: +poll */
+/* sysdep: +mkfifo */
+/* sysdep: +flock */
+/* sysdep: -shortsetgroups */

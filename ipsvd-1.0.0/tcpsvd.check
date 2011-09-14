@@ -1,0 +1,20 @@
+#!/bin/sh
+rm -rf "${ctmp}"
+
+tcpsvd
+echo $?
+tcpsvd -V
+echo $?
+
+mkdir "${ctmp}"
+tcpsvd -llocalhost -i"${ctmp}" 127.0.0.1 12614 sh -c 'cat >&2' &
+pid=$!
+sleep 1
+echo "sh -c 'echo foo >&2; cat >&2'" >"${ctmp}"/127.0
+chmod 0755 "${ctmp}"/127.0
+check-tcpsvd
+sleep 3
+kill -TERM $pid
+wait
+echo $?
+rm -rf "${ctmp}"

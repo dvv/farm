@@ -1,0 +1,27 @@
+#!/bin/sh
+rm -rf "${ctmp}"
+
+ipsvd-cdb
+echo $?
+
+mkdir "${ctmp}"
+echo >"${ctmp}"/0
+chmod 0 "${ctmp}"/0
+echo '+foo=bar' >"${ctmp}"/10.0.0.1
+chmod 600 "${ctmp}"/10.0.0.1
+echo '+foo=bar' >"${ctmp}"/10.14.1
+echo 'C14:foobar' >>"${ctmp}"/10.14.1
+chmod 600 "${ctmp}"/10.14.1
+echo '+foo=' >"${ctmp}"/127
+echo '+bar' >>"${ctmp}"/127
+echo '=localhost:10.14.1' >>"${ctmp}"/127
+chmod 600 "${ctmp}"/127
+echo 'exec env' >"${ctmp}"/192.168
+chmod 700 "${ctmp}"/192.168
+
+ipsvd-cdb "${ctmp}".cdb "${ctmp}".cdb.tmp "${ctmp}"
+echo $?
+check-ipsvd-cdb <"${ctmp}".cdb |sort
+echo $?
+rm -f "${ctmp}".cdb
+rm -rf "${ctmp}"

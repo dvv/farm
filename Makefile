@@ -8,6 +8,8 @@ HAPROXY=haproxy-1.5-dev7
 STUD=stud-latest
 REDIS=redis-latest
 WEBFS=webfs-1.21
+RUNIT=runit-2.1.1
+IPSVD=ipsvd-1.0.0
 ARCH=$(shell uname)
 ifeq ($(ARCH),Darwin)
 	MONGO_OS=osx
@@ -24,13 +26,8 @@ ROOT=$(shell pwd)
 all: check bin
 
 check:
-ifneq ($(ARCH),Darwin)
-	# FIXME: non-debians have no dpkg.
-	dpkg -s runit >/dev/null
-	dpkg -s ipsvd >/dev/null
-endif
 
-bin: $(MONGO)/bin/mongo $(HAPROXY)/haproxy $(STUD)/$(STUD_TARGET) $(REDIS)/src/redis-server $(WEBFS)/webfsd
+bin: $(MONGO)/bin/mongo $(HAPROXY)/haproxy $(STUD)/$(STUD_TARGET) $(REDIS)/src/redis-server $(WEBFS)/webfsd $(RUNIT)/runsvdir $(IPSVD)/tcpsvd
 
 $(HAPROXY)/haproxy: $(HAPROXY)
 	make -C $^ TARGET=generic
@@ -64,21 +61,46 @@ $(WEBFS)/webfsd: $(WEBFS)
 $(WEBFS):
 	wget http://www.kraxel.org/releases/webfs/$(WEBFS).tar.gz -O - | tar -xzpf -
 
-#$(BUSYBOX):
-#	wget http://landley.net/aboriginal/downloads/binaries/root-filesystems/simple-root-filesystem-i686.tar.bz2
+busybox/busybox: busybox
+	make -C $^ defconfig
+	make -C $^
+
+busybox:
+	wget http://www.busybox.net/downloads/busybox-snapshot.tar.bz2 -O - | tar -xjpf -
+
+$(RUNIT)/runsvdir: $(RUNIT)
+	make -C $^
+
+$(RUNIT):
+	wget http://smarden.org/runit/$(RUNIT).tar.gz -O - | tar -xzpf -
+	mv admin/$(RUNIT)/src $(RUNIT)
+	rm -fr admin
+
+$(IPSVD)/tcpsvd: $(IPSVD)
+	make -C $^
+
+$(IPSVD):
+	wget http://smarden.org/ipsvd/$(IPSVD).tar.gz -O - | tar -xzpf -
+	mv net/$(IPSVD)/src $(IPSVD)
+	rm -fr net
 
 install: bin
 	install -s $(HAPROXY)/haproxy $(REDIS)/src/redis-server $(REDIS)/src/redis-cli $(WEBFS)/webfsd /usr/local/bin
 	install $(MONGO)/bin/* /usr/local/bin
 	install -s $(STUD)/$(STUD_TARGET) /usr/local/bin/stud
+	install -s $(RUNIT)/runsvdir $(RUNIT)/runsv $(RUNIT)/sv $(RUNIT)/chpst $(RUNIT)/svlogd /usr/local/bin
+	install -s $(IPSVD)/tcpsvd /usr/local/bin
 	-useradd haproxy
 	-useradd stud
 	-useradd redis
 	-useradd mongo
 	-useradd web
-	cp -a runit/* /etc/service
+	mkdir -p /etc/service
+	cp -a service/* /etc/service
 
 uninstall:
+	rm -fr /usr/local/bin/tcpsvd
+	rm -fr /usr/local/bin/runsvdir /usr/local/bin/runsv /usr/local/bin/sv /usr/local/bin/chpst /usr/local/bin/svlogd
 	rm -fr /usr/local/bin/haproxy /usr/local/bin/stud /usr/local/bin/redis-* /usr/local/bin/mongo* /usr/local/bin/bsondump /etc/service/haproxy /etc/service/stud /etc/service/redis /etc/service/mongo
 	-userdel web
 	-userdel mongo

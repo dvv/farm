@@ -1,0 +1,39 @@
+#!/bin/sh
+rm -rf "${ctmp}"
+OPTS=
+test `id -u` -ne 0 || OPTS='-uroot'
+
+(sslio 2>&1; echo $?) |grep -v usage
+(sslio -V 2>&1; echo $?) |grep -v usage
+
+mkdir "${ctmp}"
+mkfifo -m0600 "${ctmp}"/p0
+mkfifo -m0600 "${ctmp}"/p1
+sh -c "exec <${ctmp}/p0
+       exec >${ctmp}/p1
+       sslio $OPTS -Csslio.pem sh -c 'echo foo'" &
+pid=$!
+sh -c "exec 7>${ctmp}/p0
+       exec 6<${ctmp}/p1
+       sslio $OPTS -c sh -c 'cat <&6'"
+rcc=$?
+wait $pid
+rcs=$?
+sleep 2
+echo $rcs
+echo $rcc
+sh -c "exec <${ctmp}/p0
+       exec >${ctmp}/p1
+       sslio $OPTS -Csslio.pem sh -c 'cat >&2'" &
+pid=$!
+sh -c "exec 7>${ctmp}/p0
+       exec 6<${ctmp}/p1
+       sslio $OPTS -c sh -c 'echo bar >&7'"
+rcc=$?
+wait $pid
+rcs=$?
+sleep 2
+echo $rcs
+echo $rcc
+
+rm -rf "${ctmp}"

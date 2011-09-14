@@ -1,0 +1,12 @@
+include Makefile
+
+CC=../../compile
+LD=../../load
+LDFLAGS=
+DFLAGS=
+
+matrixssl.a: $(OBJECTS)
+	rm -f matrixssl.a
+	../../makelib matrixssl.a $(OBJECTS)
+#	ar cr libmatrixssl.a $(OBJECTS)
+#	ranlib libmatrixssl.a
