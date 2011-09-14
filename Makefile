@@ -109,6 +109,6 @@ uninstall:
 	-userdel haproxy
 
 clean:
-	rm -fr $(HAPROXY) $(STUD) $(REDIS) $(MONGO) $(WEBFS)
+	rm -fr $(HAPROXY) $(STUD) $(REDIS) $(MONGO) $(WEBFS) $(RUNIT) $(IPSVD)
 
 .PHONY: all check bin lib install uninstall clean
