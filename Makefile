@@ -24,9 +24,11 @@ ROOT=$(shell pwd)
 all: check bin
 
 check:
+ifneq ($(ARCH),Darwin)
 	# FIXME: non-debians have no dpkg.
 	dpkg -s runit >/dev/null
 	dpkg -s ipsvd >/dev/null
+endif
 
 bin: $(MONGO)/bin/mongo $(HAPROXY)/haproxy $(STUD)/$(STUD_TARGET) $(REDIS)/src/redis-server $(WEBFS)/webfsd
 
