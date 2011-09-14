@@ -1,0 +1,2 @@
+#!/bin/sh
+exec webfsd -F -r /home/web 2>&1

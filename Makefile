@@ -4,17 +4,17 @@
 # dronnikov@gmail.com 2011
 #
 
-HAPROXY=haproxy-1.5-dev6
-LIBEV=libev-4.04
+HAPROXY=haproxy-1.5-dev7
 STUD=stud-latest
 REDIS=redis-latest
+WEBFS=webfs-1.21
 ARCH=$(shell uname)
-ifneq ($(ARCH),Darwin)
+ifeq ($(ARCH),Darwin)
 	MONGO_OS=osx
-	MONGO=mongodb-osx-i386-1.8.3
+	MONGO=mongodb-osx-i386-2.0.0
 else
 	MONGO_OS=linux
-	MONGO=mongodb-linux-i686-1.8.3
+	MONGO=mongodb-linux-i686-2.0.0
 endif
 
 ROOT=$(shell pwd)
@@ -26,79 +26,63 @@ check:
 	dpkg -s runit >/dev/null
 	dpkg -s ipsvd >/dev/null
 
-#bin: $(MONGO)/bin/mongo $(HAPROXY)/haproxy $(STUD)/stud $(REDIS)/src/redis-server
-bin: $(HAPROXY)/haproxy $(STUD)/stud $(REDIS)/src/redis-server
+bin: $(MONGO)/bin/mongo $(HAPROXY)/haproxy $(STUD)/stud-shared $(REDIS)/src/redis-server $(WEBFS)/webfsd
 
 $(HAPROXY)/haproxy: $(HAPROXY)
 	make -C $^ TARGET=generic
 
-$(HAPROXY): $(HAPROXY).tar.gz
-	tar xzpf $^
+$(HAPROXY):
+	wget http://haproxy.1wt.eu/download/1.5/src/devel/$(HAPROXY).tar.gz -O - | tar -xzpf -
 
-$(HAPROXY).tar.gz:
-	wget http://haproxy.1wt.eu/download/1.5/src/devel/$(HAPROXY).tar.gz
+$(STUD)/stud-shared: $(STUD)
+	make -C $^ stud-shared
 
-$(STUD)/stud: $(STUD) $(LIBEV)/.libs/libev.a
-	#CFLAGS='-I$(ROOT)/$(LIBEV) -L$(ROOT)/$(LIBEV)/.libs' make -C $(STUD)
-	# N.B. to statically link with libev.a, had to override stud's Makefile
-	( cd $(STUD) ; gcc -O2 -g -std=c99 -fno-strict-aliasing -Wall -W -I$(ROOT)/$(LIBEV) -I. -o stud ringbuffer.c stud.c -D_GNU_SOURCE $(ROOT)/$(LIBEV)/.libs/libev.a -lm -lssl -lcrypto )
-
-$(STUD): $(STUD).tar.gz
-	tar xzpf $^
-	mv bumptech* $@
-
-$(STUD).tar.gz:
-	wget https://github.com/bumptech/stud/tarball/master -O $@
-
-$(LIBEV)/.libs/libev.a: $(LIBEV)
-	(cd $^ ; ./configure)
-	make -C $^
-
-$(LIBEV): $(LIBEV).tar.gz
-	tar xzpf $^
-
-$(LIBEV).tar.gz:
-	wget http://dist.schmorp.de/libev/$(LIBEV).tar.gz
+$(STUD):
+	wget https://github.com/dvv/stud/tarball/master -O - | tar -xzpf -
+	mv dvv* $@
 
 $(REDIS)/src/redis-server: $(REDIS)
 	make -C $^
 
-$(REDIS): $(REDIS).tar.gz
-	tar xzpf $^
+$(REDIS):
+	wget https://github.com/antirez/redis/tarball/master -O - | tar -xzpf -
 	mv antirez* $@
-
-$(REDIS).tar.gz:
-	wget https://github.com/antirez/redis/tarball/master -O $@
 
 $(MONGO)/bin/mongo: $(MONGO)
 	touch -c $@
 
-$(MONGO): $(MONGO).tgz
-	tar xzpf $^
+$(MONGO):
+	wget http://fastdl.mongodb.org/$(MONGO_OS)/$(MONGO).tgz -O - | tar -xzpf -
 
-$(MONGO).tgz:
-	wget http://fastdl.mongodb.org/$(MONGO_OS)/$(MONGO).tgz -O $@
+$(WEBFS)/webfsd: $(WEBFS)
+	make -C $^
+
+$(WEBFS):
+	wget http://www.kraxel.org/releases/webfs/$(WEBFS).tar.gz -O - | tar -xzpf -
 
 #$(BUSYBOX):
 #	wget http://landley.net/aboriginal/downloads/binaries/root-filesystems/simple-root-filesystem-i686.tar.bz2
 
 install: bin
-	install -s $(HAPROXY)/haproxy $(STUD)/stud $(REDIS)/src/redis-server $(REDIS)/src/redis-cli $(MONGO)/bin/* /usr/local/bin
+	install -s $(HAPROXY)/haproxy $(REDIS)/src/redis-server $(REDIS)/src/redis-cli $(WEBFS)/webfsd /usr/local/bin
+	install $(MONGO)/bin/* /usr/local/bin
+	install -s $(STUD)/stud-shared /usr/local/bin/stud
 	-useradd haproxy
 	-useradd stud
 	-useradd redis
 	-useradd mongo
+	-useradd web
 	cp -a runit/* /etc/service
 
 uninstall:
 	rm -fr /usr/local/bin/haproxy /usr/local/bin/stud /usr/local/bin/redis-* /usr/local/bin/mongo* /usr/local/bin/bsondump /etc/service/haproxy /etc/service/stud /etc/service/redis /etc/service/mongo
+	-userdel web
 	-userdel mongo
 	-userdel redis
 	-userdel stud
 	-userdel haproxy
 
 clean:
-	rm -fr $(HAPROXY) $(STUD) $(LIBEV) $(REDIS) $(MONGO)
-	rm -fr $(HAPROXY).tar.gz $(STUD).tar.gz $(LIBEV).tar.gz $(REDIS).tar.gz $(MONGO).tgz
+	rm -fr $(HAPROXY) $(STUD) $(REDIS) $(MONGO) $(WEBFS)
 
 .PHONY: all check bin lib install uninstall clean
