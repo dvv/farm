@@ -1,0 +1,61 @@
+diff -Naur haproxy-1.5-dev7.orig/src/acl.c haproxy-1.5-dev7/src/acl.c
+--- haproxy-1.5-dev7.orig/src/acl.c	2011-09-11 01:43:11.000000000 +0400
++++ haproxy-1.5-dev7/src/acl.c	2011-09-16 18:38:40.576660268 +0400
+@@ -389,6 +389,47 @@
+ }
+ 
+ 
++//DVV
++/* Look if <policy-file-request/>\0 string is in request buffer.
++ * Use to route Flash socket policy requests.
++ */
++int
++acl_fetch_flash_policy(struct proxy *px, struct session *l4, void *l7, int dir,
++			struct acl_expr *expr, struct acl_test *test)
++{
++	const unsigned char *data;
++
++	if (!l4 || !l4->req)
++		return 0;
++
++	test->flags = 0;
++
++	if (l4->req->l < 1)
++		goto too_short;
++
++	data = (const unsigned char *)l4->req->w;
++
++	if (data[0] != '<')
++		goto not_policy;
++
++	if (l4->req->l < 23)
++		goto too_short;
++
++	if (memcmp("<policy-file-request/>\0", (const char *)data, 23) != 0)
++		goto not_policy;
++
++//fprintf(stderr, "POLICY!!!\n");
++
++	test->flags = ACL_TEST_F_SET_RES_PASS;
++	return 1;
++
++ too_short:
++	test->flags = ACL_TEST_F_MAY_CHANGE;
++ not_policy:
++	return 0;
++}
++//DVV
++
+ /*
+  * These functions are exported and may be used by any other component.
+  */
+@@ -1875,6 +1916,9 @@
+ 	{ "req_ssl_ver",         acl_parse_dotted_ver, acl_fetch_req_ssl_ver,    acl_match_int,     ACL_USE_L6REQ_VOLATILE },
+ 	{ "req_rdp_cookie",      acl_parse_str,        acl_fetch_rdp_cookie,     acl_match_str,     ACL_USE_L6REQ_VOLATILE|ACL_MAY_LOOKUP },
+ 	{ "req_rdp_cookie_cnt",  acl_parse_int,        acl_fetch_rdp_cookie_cnt, acl_match_int,     ACL_USE_L6REQ_VOLATILE },
++//DVV
++	{ "req_flash_policy",    acl_parse_nothing,    acl_fetch_flash_policy,   acl_match_nothing, ACL_USE_L6REQ_VOLATILE },
++//DVV
+ #if 0
+ 	{ "time",       acl_parse_time,  acl_fetch_time,   acl_match_time  },
+ #endif

@@ -27,7 +27,8 @@ all: check bin
 check:
 
 #bin: $(MONGO)/bin/mongo $(HAPROXY)/haproxy $(STUD)/$(STUD_TARGET) $(REDIS)/src/redis-server $(RUNIT)/runsvdir $(IPSVD)/tcpsvd
-bin: $(HAPROXY)/haproxy
+#bin: $(HAPROXY)/haproxy
+bin: $(STUD)/$(STUD_TARGET)
 
 $(HAPROXY)/haproxy: $(HAPROXY)
 	make -C $^ TARGET=generic

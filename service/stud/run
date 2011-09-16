@@ -1,2 +1,2 @@
 #!/bin/sh
-exec stud -n 1 -u stud -f \*,443 -b 127.0.0.1,65443 --write-proxy -B 100 -C 100 farm.pem 2>&1
+exec stud -n 1 -u stud -f \*,443 -b 127.0.0.1,65443 --write-proxy -B 100 -C 100 --ssl -- farm.pem >/dev/null 2>&1
