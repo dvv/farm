@@ -1,6 +1,6 @@
 {
     "name": "farm"
-  , "version": "2.0.4"
+  , "version": "2.0.5"
   , "description": "HTTP/HTTPS server farm made easy"
   , "keywords": ["websocket", "socket.io", "scale", "multiple", "haproxy", "stunnel", "stud"]
   , "author": "Vladimir Dronnikov <dronnikov@gmail.com>"
