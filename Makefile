@@ -7,6 +7,8 @@
 HAPROXY=haproxy-1.5-dev7
 STUD=stud-latest
 REDIS=redis-latest
+ZEROMQ=zeromq-2.1.9
+ZEROMQNODE=zeromq-0.5.1
 RUNIT=runit-2.1.1
 IPSVD=ipsvd-1.0.0
 ARCH=$(shell uname)
@@ -26,6 +28,7 @@ all: check bin
 
 check:
 
+#bin: $(ZEROMQNODE)/binding.node
 bin: $(MONGO)/bin/mongo $(HAPROXY)/haproxy $(STUD)/$(STUD_TARGET) $(REDIS)/src/redis-server $(RUNIT)/runsvdir $(IPSVD)/tcpsvd
 
 $(HAPROXY)/haproxy: $(HAPROXY)
@@ -76,6 +79,28 @@ $(IPSVD):
 	wget http://smarden.org/ipsvd/$(IPSVD).tar.gz -O - | tar -xzpf -
 	mv net/$(IPSVD)/src $(IPSVD)
 	rm -fr net
+
+$(ZEROMQ)/src/.libs/libzmq.a: $(ZEROMQ)
+	( cd $^ ; ./configure --prefix=/usr )
+	make -C $^
+	touch -c $@
+	sudo make install
+	npm install zeromq
+
+$(ZEROMQ):
+	# TODO: need apt-get install uuid-dev
+	wget http://download.zeromq.org/$(ZEROMQ).tar.gz -O - | tar -xzpf -
+
+$(ZEROMQNODE)/binding.node: $(ZEROMQ)/src/.libs/libzmq.a $(ZEROMQNODE)
+	#( cd $(ZEROMQNODE) ; PKG_CONFIG_PATH=../$(ZEROMQ)/src CXXFLAGS="" node-waf -vv configure build )
+	#( cd $(ZEROMQNODE) ; g++ build/default/binding_1.o -o build/default/binding.node -I$(ROOT)/$(ZEROMQ)/include -L$(ROOT)/$(ZEROMQ)/src/.libs -lzmq -luuid -lrt -lpthread )
+	# TODO: need apt-get install libzmq-dev
+	( cd $(ZEROMQNODE) ; node-waf configure build )
+	touch -c $@
+
+$(ZEROMQNODE):
+	wget http://registry.npmjs.org/zeromq/-/$(ZEROMQNODE).tgz -O - | tar -xzpf -
+	mv package $@
 
 install: bin
 	install -s $(HAPROXY)/haproxy $(REDIS)/src/redis-server $(REDIS)/src/redis-cli /usr/local/bin
