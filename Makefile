@@ -29,6 +29,7 @@ all: check bin
 check:
 
 #bin: $(ZEROMQNODE)/binding.node
+#bin: $(ZEROMQ)/src/.libs/libzmq.a
 bin: $(MONGO)/bin/mongo $(HAPROXY)/haproxy $(STUD)/$(STUD_TARGET) $(REDIS)/src/redis-server $(RUNIT)/runsvdir $(IPSVD)/tcpsvd
 
 $(HAPROXY)/haproxy: $(HAPROXY)
@@ -81,11 +82,9 @@ $(IPSVD):
 	rm -fr net
 
 $(ZEROMQ)/src/.libs/libzmq.a: $(ZEROMQ)
-	( cd $^ ; ./configure --prefix=/usr )
+	( cd $^ ; ./configure --prefix=/usr --enable-shared=no )
 	make -C $^
 	touch -c $@
-	sudo make install
-	npm install zeromq
 
 $(ZEROMQ):
 	# TODO: need apt-get install uuid-dev
