@@ -1,2 +1,2 @@
 #!/bin/sh
-exec /usr/local/bin/haproxy -f haproxy.conf 2>&1
+exec haproxy -f conf 2>&1

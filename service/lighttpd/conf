@@ -1,0 +1,16 @@
+server.document-root = "/home/dvv/node_modules/la-scala/example/"
+server.bind = "127.0.0.1"
+server.port = 65080
+server.username = "web"
+server.groupname = "web"
+index-file.names = (
+  "index.html"
+)
+mimetype.assign = (
+  ".html" => "text/html",
+  ".js"   => "text/javascript",
+  ".css"  => "text/stylesheet",
+  ".txt"  => "text/plain",
+  ".jpg"  => "image/jpeg",
+  ".png"  => "image/png"
+)

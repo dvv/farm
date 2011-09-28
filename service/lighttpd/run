@@ -1,0 +1,2 @@
+#!/bin/sh
+exec lighttpd -f conf -D 2>&1

@@ -11,6 +11,8 @@ ZEROMQ=zeromq-2.1.9
 ZEROMQNODE=zeromq-0.5.1
 RUNIT=runit-2.1.1
 IPSVD=ipsvd-1.0.0
+LIGHTTPD=lighttpd-1.4.29
+NGINX=nginx-1.1.4
 ARCH=$(shell uname)
 ifeq ($(ARCH),Darwin)
 	MONGO_OS=osx
@@ -19,7 +21,7 @@ ifeq ($(ARCH),Darwin)
 else
 	MONGO_OS=linux
 	MONGO=mongodb-linux-i686-2.0.0
-	STUD_TARGET=stud-shared
+	STUD_TARGET=stud #-shared
 endif
 
 ROOT=$(shell pwd)
@@ -30,7 +32,10 @@ check:
 
 #bin: $(ZEROMQNODE)/binding.node
 #bin: $(ZEROMQ)/src/.libs/libzmq.a
-bin: $(MONGO)/bin/mongo $(HAPROXY)/haproxy $(STUD)/$(STUD_TARGET) $(REDIS)/src/redis-server $(RUNIT)/runsvdir $(IPSVD)/tcpsvd
+#bin: $(MONGO)/bin/mongo $(HAPROXY)/haproxy $(STUD)/$(STUD_TARGET) $(REDIS)/src/redis-server $(RUNIT)/runsvdir $(LIGHTTPD)/src/lighttpd
+#bin: $(LIGHTTPD)/src/lighttpd
+bin: $(NGINX)/src/nginx
+#bin: $(STUD)/$(STUD_TARGET)
 
 $(HAPROXY)/haproxy: $(HAPROXY)
 	make -C $^ TARGET=generic
@@ -39,7 +44,8 @@ $(HAPROXY):
 	wget http://haproxy.1wt.eu/download/1.5/src/devel/$(HAPROXY).tar.gz -O - | tar -xzpf -
 
 $(STUD)/$(STUD_TARGET): $(STUD)
-	make -C $^ $(STUD_TARGET)
+	cp Makefile.stud $^
+	make -C $^ -f Makefile.stud $(STUD_TARGET)
 
 $(STUD):
 	wget https://github.com/dvv/stud/tarball/master -O - | tar -xzpf -
@@ -73,14 +79,6 @@ $(RUNIT):
 	mv admin/$(RUNIT)/src $(RUNIT)
 	rm -fr admin
 
-$(IPSVD)/tcpsvd: $(IPSVD)
-	make -C $^
-
-$(IPSVD):
-	wget http://smarden.org/ipsvd/$(IPSVD).tar.gz -O - | tar -xzpf -
-	mv net/$(IPSVD)/src $(IPSVD)
-	rm -fr net
-
 $(ZEROMQ)/src/.libs/libzmq.a: $(ZEROMQ)
 	( cd $^ ; ./configure --prefix=/usr --enable-shared=no )
 	make -C $^
@@ -101,12 +99,30 @@ $(ZEROMQNODE):
 	wget http://registry.npmjs.org/zeromq/-/$(ZEROMQNODE).tgz -O - | tar -xzpf -
 	mv package $@
 
+$(LIGHTTPD)/src/lighttpd: $(LIGHTTPD)
+	# TODO: need apt-get install libssl-dev
+	( cd $^ ; ./configure --prefix=/usr/local --sbindir=/usr/local/bin --libdir=/usr/local/lib/lighttpd --without-pcre --without-bzip2 --with-openssl )
+	make -C $^
+	touch -c $@
+
+$(LIGHTTPD):
+	wget http://download.lighttpd.net/lighttpd/releases-1.4.x/$(LIGHTTPD).tar.gz -O - | tar -xzpf -
+
+$(NGINX)/src/nginx: $(NGINX)
+	# TODO: need apt-get install libssl-dev libpcre3-dev
+	( cd $^ ; ./configure --prefix=/usr/local --sbin-path=/usr/local/bin --conf-path=/etc/service/nginx/conf --error-log-path=/dev/stderr --pid-path=/etc/service/nginx/.pid --lock-path=/etc/service/nginx/.lock --with-http_ssl_module )
+	#make -C $^
+	touch -c $@
+
+$(NGINX):
+	wget http://nginx.org/download/$(NGINX).tar.gz -O - | tar -xzpf -
+
 install: bin
 	install -s $(HAPROXY)/haproxy $(REDIS)/src/redis-server $(REDIS)/src/redis-cli /usr/local/bin
 	install $(MONGO)/bin/* /usr/local/bin
 	install -s $(STUD)/$(STUD_TARGET) /usr/local/bin/stud
 	#install -s $(RUNIT)/runsvdir $(RUNIT)/runsv $(RUNIT)/sv $(RUNIT)/chpst $(RUNIT)/svlogd /usr/local/bin
-	install -s $(IPSVD)/tcpsvd /usr/local/bin
+	make -C $(LIGHTTPD) install
 	-useradd haproxy
 	-useradd stud
 	-useradd redis
@@ -116,7 +132,7 @@ install: bin
 	cp -a service/* /etc/service
 
 uninstall:
-	rm -fr /usr/local/bin/tcpsvd
+	make -C $(LIGHTTPD) uninstall
 	#rm -fr /usr/local/bin/runsvdir /usr/local/bin/runsv /usr/local/bin/sv /usr/local/bin/chpst /usr/local/bin/svlogd
 	rm -fr /usr/local/bin/haproxy /usr/local/bin/stud /usr/local/bin/redis-* /usr/local/bin/mongo* /usr/local/bin/bsondump /etc/service/haproxy /etc/service/stud /etc/service/redis /etc/service/mongo
 	-userdel web
@@ -126,6 +142,6 @@ uninstall:
 	-userdel haproxy
 
 clean:
-	rm -fr $(HAPROXY) $(STUD) $(REDIS) $(MONGO) $(RUNIT) $(IPSVD)
+	rm -fr $(HAPROXY) $(STUD) $(REDIS) $(MONGO) $(RUNIT) $(LIGHTTPD)
 
 .PHONY: all check bin lib install uninstall clean

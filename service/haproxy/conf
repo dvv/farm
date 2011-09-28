@@ -18,7 +18,7 @@ global
 	#
 
 	log 127.0.0.1 local0
-	debug
+	#debug
 	#quiet
 
 	#
@@ -78,16 +78,20 @@ frontend farm
 	default_backend http
 
 	#
+	# proxy static content
+	#
+
+	acl is_static path_beg /public/
+	use_backend static if is_static
+
+	#
 	# proxy WebSocket
 	#
 
-	# truly websocket use Upgrade: WebSocket
 	acl is_websocket hdr(upgrade) -i websocket
-	# SockJS uses path prefix, let it be /ws/
-	acl is_websocket path_beg -i /ws/
-	# socket.io uses path prefix /socket.io/
-	acl is_websocket path_beg -i /socket.io/
-	use_backend websockets if is_websocket
+	acl is_websocket path_beg /ws/
+	acl is_websocket hdr_beg /host/ -i ws
+	use_backend websocket if is_websocket
 
 	#
 	# client must not keep silence more than for 25 seconds
@@ -179,7 +183,64 @@ backend http
 
 	timeout http-keep-alive 1
 
-backend websockets
+backend static
+
+	#
+	# CONFIG: enlist workers
+	#
+
+	#monitor-uri /
+	option httpchk GET /public/index.html
+
+	server s1 127.0.0.1:65080 check
+
+	#
+	# balance the load
+	#
+
+	balance leastconn
+
+	#
+	# workers setup
+	#
+
+	fullconn 10000
+	default-server weight 50 maxqueue 16384 minconn 512 maxconn 16384 slowstart 1000 inter 5000 fastinter 500 downinter 10000 rise 2 fall 3
+
+	#
+	# timeouts
+	#
+
+	#option forceclose
+
+	#
+	# server must be contacted within 5 seconds
+	#
+
+	timeout connect 5s
+
+	#
+	# all headers must arrive within 1 seconds
+	#
+
+	timeout http-request 1s
+
+	#
+	# server must respond within 25 seconds
+	# N.B. should equal client timeout in frontend
+	#
+
+	timeout server 25s
+
+	#
+	# don't close connection for 1 ms
+	# helps to glue several short requests in one session
+	# N.B. >10 can dramatically slow down short requests
+	#
+
+	timeout http-keep-alive 1
+
+backend websocket
 
 	#
 	# CONFIG: enlist workers.

@@ -5,15 +5,15 @@ int main (int argc, char *argv [])
   void *context = zmq_init(1);
 
   // listening to messages
-  fprintf(stderr, "Listener started at *:5554\n");
+  fprintf(stderr, "Push to *:65454\n");
   void *sub = zmq_socket(context, ZMQ_SUB);
-  zmq_bind(sub, "tcp://*:5554");
+  zmq_bind(sub, "tcp://*:65454");
   zmq_setsockopt(sub, ZMQ_SUBSCRIBE, "", 0);
 
   // publishing to subscribers
-  fprintf(stderr, "Publisher started at *:5555\n");
+  fprintf(stderr, "Subscribe to *:65455\n");
   void *pub = zmq_socket(context, ZMQ_PUB);
-  zmq_bind(pub, "tcp://*:5555");
+  zmq_bind(pub, "tcp://*:65455");
 
   // loop
   while (1) {
