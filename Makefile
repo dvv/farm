@@ -21,7 +21,7 @@ ifeq ($(ARCH),Darwin)
 else
 	MONGO_OS=linux
 	MONGO=mongodb-linux-i686-2.0.0
-	STUD_TARGET=stud #-shared
+	STUD_TARGET=stud-shared
 endif
 
 ROOT=$(shell pwd)
@@ -34,8 +34,8 @@ check:
 #bin: $(ZEROMQ)/src/.libs/libzmq.a
 #bin: $(MONGO)/bin/mongo $(HAPROXY)/haproxy $(STUD)/$(STUD_TARGET) $(REDIS)/src/redis-server $(RUNIT)/runsvdir $(LIGHTTPD)/src/lighttpd
 #bin: $(LIGHTTPD)/src/lighttpd
-bin: $(NGINX)/src/nginx
-#bin: $(STUD)/$(STUD_TARGET)
+#bin: $(NGINX)/src/nginx
+bin: $(STUD)/$(STUD_TARGET)
 
 $(HAPROXY)/haproxy: $(HAPROXY)
 	make -C $^ TARGET=generic
@@ -111,7 +111,7 @@ $(LIGHTTPD):
 $(NGINX)/src/nginx: $(NGINX)
 	# TODO: need apt-get install libssl-dev libpcre3-dev
 	( cd $^ ; ./configure --prefix=/usr/local --sbin-path=/usr/local/bin --conf-path=/etc/service/nginx/conf --error-log-path=/dev/stderr --pid-path=/etc/service/nginx/.pid --lock-path=/etc/service/nginx/.lock --with-http_ssl_module )
-	#make -C $^
+	make -C $^
 	touch -c $@
 
 $(NGINX):
