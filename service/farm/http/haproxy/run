@@ -1,0 +1,2 @@
+#!/bin/sh
+exec haproxy -f conf 2>&1

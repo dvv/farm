@@ -1,0 +1,297 @@
+
+#
+# dvv's way to configure haproxy
+#
+
+global
+
+	#
+	# process security
+	#
+
+	#chroot /usr/share/haproxy
+	user haproxy
+	group haproxy
+
+	#
+	# logging
+	#
+
+	log 127.0.0.1 local0
+	debug
+	#quiet
+
+	#
+	# concurrent connections limit
+	#
+
+	maxconn 32768
+
+	#
+	# distribute the health checks with a bit of randomness
+	#
+
+	spread-checks 5
+
+defaults
+
+	mode http
+	option abortonclose
+	no option accept-invalid-http-request
+	no option accept-invalid-http-response
+	option allbackups
+	option dontlognull
+	option forwardfor except 127.0.0.1 header X-Forwarded-For
+	option httpchk GET /haproxy?monitor
+	http-check disable-on-404
+	log global
+	option httplog
+	option log-separate-errors
+	option redispatch
+	retries 3
+	#?option splice-auto
+	option tcp-smart-connect
+
+frontend farm
+
+	#
+	# listen to HTTP
+	#
+	# CONFIG: edit address:port for HTTP
+	#
+
+	bind 0.0.0.0:80
+
+	#
+	# listen to HTTPS thru stud
+	#
+	# CONFIG: edit port for HTTPS internal port.
+	# the same value should be used in stud -b option
+	#
+
+	bind 127.0.0.1:65443 accept-proxy
+
+	#
+	# proxy HTTP
+	#
+
+	default_backend rpc
+
+	#
+	# proxy RPC
+	#
+
+	acl is_rpc path_beg /rpc/
+	acl is_rpc path_beg /haproxy
+	use_backend rpc if is_rpc
+
+	#
+	# proxy WebSocket
+	#
+
+	acl is_websocket hdr(upgrade) -i websocket
+	acl is_websocket path_beg /ws/
+	acl is_websocket hdr_beg /host/ -i ws
+	use_backend websocket if is_websocket
+
+	#
+	# client must not keep silence more than for 25 seconds
+	# N.B. should equal server timeout
+	#
+	# TODO: long upload? route to another server?
+
+	timeout client 25s
+
+	#
+	# health monitoring
+	#
+
+	monitor-uri /haproxy?alive
+	acl site_dead nbsrv(dynamic) lt 2
+	acl site_dead nbsrv(static)  lt 2
+	monitor fail if site_dead
+
+backend rpc
+
+	#
+	# CONFIG: enlist workers
+	#
+
+	server s1 127.0.0.1:3001 check cookie s1
+	server s2 127.0.0.1:3002 check cookie s2
+	server s3 127.0.0.1:3003 check cookie s3
+	server s4 127.0.0.1:3004 check backup
+
+	#
+	# balance the load
+	#
+
+	balance leastconn
+
+	#
+	# cookie persistence
+	#
+
+	cookie SERVERID insert indirect postonly
+
+	#
+	# workers setup
+	#
+
+	fullconn 10000
+	default-server weight 50 maxqueue 16384 minconn 512 maxconn 16384 slowstart 1000 inter 5000 fastinter 500 downinter 10000 rise 2 fall 3
+
+	#
+	# admin interface
+	#
+
+	stats enable
+	stats uri /haproxy?stats
+	stats hide-version
+	#stats refresh 3s
+	stats admin if LOCALHOST
+
+	#
+	# timeouts
+	#
+
+	option forceclose
+
+	#
+	# server must be contacted within 5 seconds
+	#
+
+	timeout connect 5s
+
+	#
+	# all headers must arrive within 3 seconds
+	#
+
+	timeout http-request 3s
+
+	#
+	# server must respond within 25 seconds
+	# N.B. should equal client timeout in frontend
+	#
+
+	timeout server 25s
+
+	#
+	# don't close connection for 1 ms
+	# helps to glue several short requests in one session
+	# N.B. >10 can dramatically slow down short requests
+	#
+
+	timeout http-keep-alive 1
+
+backend websocket
+
+	#
+	# CONFIG: enlist workers.
+	# you should just copy the list from http backend
+	#
+
+	server s1 127.0.0.1:3001 check cookie s1
+	server s2 127.0.0.1:3002 check cookie s2
+	server s3 127.0.0.1:3003 check cookie s3
+	server s4 127.0.0.1:3004 check backup
+
+	#
+	# balance the load
+	#
+
+	balance roundrobin
+
+	#
+	# cookie persistence
+	#
+
+	cookie SERVERID insert indirect nocache
+
+	#
+	# workers setup
+	#
+
+	default-server weight 50 maxqueue 16384 maxconn 16384 slowstart 1000 inter 5000 fastinter 500 downinter 10000 rise 2 fall 3
+
+	#
+	# adjust session rate
+	#
+
+	#rate-limit sessions 10
+
+	#
+	# timeouts
+	#
+
+	#option forceclose
+	timeout queue 5s
+
+	#
+	# server must be contacted within 60 seconds
+	#
+
+	timeout connect 60s
+
+	#
+	# limit server response time by 1 day
+	#
+
+	timeout server 1d
+
+backend http
+
+	#
+	# CONFIG: enlist workers
+	#
+
+	#monitor-uri /
+	option httpchk GET /index.html
+
+	server s1 127.0.0.1:65440 check
+
+	#
+	# balance the load
+	#
+
+	balance leastconn
+
+	#
+	# workers setup
+	#
+
+	fullconn 10000
+	default-server weight 50 maxqueue 16384 minconn 512 maxconn 16384 slowstart 1000 inter 5000 fastinter 500 downinter 10000 rise 2 fall 3
+
+	#
+	# timeouts
+	#
+
+	#option forceclose
+
+	#
+	# server must be contacted within 5 seconds
+	#
+
+	timeout connect 5s
+
+	#
+	# all headers must arrive within 1 seconds
+	#
+
+	timeout http-request 1s
+
+	#
+	# server must respond within 25 seconds
+	# N.B. should equal client timeout in frontend
+	#
+
+	timeout server 25s
+
+	#
+	# don't close connection for 1 ms
+	# helps to glue several short requests in one session
+	# N.B. >10 can dramatically slow down short requests
+	#
+
+	timeout http-keep-alive 1

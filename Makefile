@@ -34,8 +34,8 @@ check:
 #bin: $(ZEROMQ)/src/.libs/libzmq.a
 #bin: $(MONGO)/bin/mongo $(HAPROXY)/haproxy $(STUD)/$(STUD_TARGET) $(REDIS)/src/redis-server $(RUNIT)/runsvdir $(LIGHTTPD)/src/lighttpd
 #bin: $(LIGHTTPD)/src/lighttpd
-#bin: $(NGINX)/src/nginx
-bin: $(STUD)/$(STUD_TARGET)
+bin: $(NGINX)/src/nginx
+#bin: $(STUD)/$(STUD_TARGET)
 
 $(HAPROXY)/haproxy: $(HAPROXY)
 	make -C $^ TARGET=generic
@@ -110,7 +110,7 @@ $(LIGHTTPD):
 
 $(NGINX)/src/nginx: $(NGINX)
 	# TODO: need apt-get install libssl-dev libpcre3-dev
-	( cd $^ ; ./configure --prefix=/usr/local --sbin-path=/usr/local/bin --conf-path=/etc/service/nginx/conf --error-log-path=/dev/stderr --pid-path=/etc/service/nginx/.pid --lock-path=/etc/service/nginx/.lock --with-http_ssl_module )
+	( cd $^ ; ./configure --prefix=/usr/local --sbin-path=/usr/local/bin --conf-path=/etc/service/nginx/conf --error-log-path=/dev/stderr --pid-path=/etc/service/nginx/.pid --lock-path=/etc/service/nginx/.lock --with-http_ssl_module --without-http_rewrite_module )
 	make -C $^
 	touch -c $@
 
@@ -121,6 +121,7 @@ install: bin
 	install -s $(HAPROXY)/haproxy $(REDIS)/src/redis-server $(REDIS)/src/redis-cli /usr/local/bin
 	install $(MONGO)/bin/* /usr/local/bin
 	install -s $(STUD)/$(STUD_TARGET) /usr/local/bin/stud
+	install -s $(NGINX)/objs/nginx /usr/local/bin
 	#install -s $(RUNIT)/runsvdir $(RUNIT)/runsv $(RUNIT)/sv $(RUNIT)/chpst $(RUNIT)/svlogd /usr/local/bin
 	make -C $(LIGHTTPD) install
 	-useradd haproxy
@@ -134,7 +135,7 @@ install: bin
 uninstall:
 	make -C $(LIGHTTPD) uninstall
 	#rm -fr /usr/local/bin/runsvdir /usr/local/bin/runsv /usr/local/bin/sv /usr/local/bin/chpst /usr/local/bin/svlogd
-	rm -fr /usr/local/bin/haproxy /usr/local/bin/stud /usr/local/bin/redis-* /usr/local/bin/mongo* /usr/local/bin/bsondump /etc/service/haproxy /etc/service/stud /etc/service/redis /etc/service/mongo
+	rm -fr /usr/local/bin/haproxy /usr/local/bin/stud /usr/local/bin/nginx /usr/local/bin/redis-* /usr/local/bin/mongo* /usr/local/bin/bsondump /etc/service/farm /etc/service/redis /etc/service/mongo
 	-userdel web
 	-userdel mongo
 	-userdel redis
@@ -142,6 +143,6 @@ uninstall:
 	-userdel haproxy
 
 clean:
-	rm -fr $(HAPROXY) $(STUD) $(REDIS) $(MONGO) $(RUNIT) $(LIGHTTPD)
+	rm -fr $(HAPROXY) $(STUD) $(REDIS) $(MONGO) $(RUNIT) $(LIGHTTPD) $(NGINX)
 
 .PHONY: all check bin lib install uninstall clean

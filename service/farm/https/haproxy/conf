@@ -1,0 +1,52 @@
+global
+
+	user haproxy
+	group haproxy
+	log 127.0.0.1 local0
+	#debug
+	maxconn 32768
+	spread-checks 5
+
+defaults
+
+	mode tcp
+	option abortonclose
+	no option accept-invalid-http-request
+	no option accept-invalid-http-response
+	option allbackups
+	option dontlognull
+	log global
+	option tcplog
+	option log-separate-errors
+	option redispatch
+	retries 3
+	#option tcp-smart-connect
+
+listen https 0.0.0.0:443
+  server s1 127.0.0.1:65444
+  server s2 127.0.0.1:65445
+  server s3 127.0.0.1:65446
+  server s4 127.0.0.1:65447
+  balance leastconn
+  fullconn 10000
+  default-server weight 50 maxqueue 16384 minconn 512 maxconn 16384 slowstart 1000 inter 5000 fastinter 500 downinter 10000 rise 2 fall 3
+  timeout client 25s
+  timeout connect 5s
+  timeout server 25s
+  # learn SSL session ID from both request and response and create affinity
+  # maximum SSL session ID length is 32 bytes.
+  stick-table type binary len 32 size 30k expire 30m
+  acl clienthello req_ssl_hello_type 1
+  acl serverhello rep_ssl_hello_type 2
+  # use tcp content accepts to detects ssl client and server hello.
+  tcp-request inspect-delay 5s
+  tcp-request content accept if clienthello
+  # no timeout on response inspect delay by default.
+  tcp-response content accept if serverhello
+  # SSL session ID (SSLID) may be present on a client or server hello.
+  # Its length is coded on 1 byte at offset 43 and its value starts
+  # at offset 44.
+  # Match and learn on request if client hello.
+  stick on payload_lv(43,1) if clienthello
+  # Learn on response if server hello.
+  stick store-response payload_lv(43,1) if serverhello
