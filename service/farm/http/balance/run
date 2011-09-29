@@ -35,13 +35,10 @@ defaults
 	default-server weight 50 maxqueue 16384 minconn 512 maxconn 16384 slowstart 1000 inter 5000 fastinter 500 downinter 10000 rise 2 fall 3
 	balance leastconn
 	fullconn 10000
-	option forceclose
 
-	# admin interface
-	stats enable
-	stats uri $ADMIN_URI
-	stats hide-version
-	#stats refresh 3s
+  timeout client 60s
+	timeout connect 5s
+	timeout server 60s
 
 frontend farm
 
@@ -55,7 +52,6 @@ frontend farm
 
 	# proxy RPC
 	acl is_rpc path_beg $RPC_PREFIX
-	acl is_rpc path_beg /haproxy
 	use_backend rpc if is_rpc
 
 	# proxy WebSocket
@@ -63,13 +59,15 @@ frontend farm
 	acl is_websocket path_beg $WEBSOCKET_PREFIX
 	use_backend websocket if is_websocket
 
+  # admin interface
+  acl is_stats path_beg $ADMIN_URI
+	use_backend stats if is_stats
+
 	## health monitoring. for upstream balancers?
 	#monitor-uri /haproxy?alive
 	#acl site_dead nbsrv(dynamic) lt 2
 	#acl site_dead nbsrv(static)  lt 2
 	#monitor fail if site_dead
-
-	timeout client 25s
 
 backend rpc
 
@@ -81,9 +79,7 @@ backend rpc
 	server s4 $WORKER_4 check backup
 	cookie SERVERID insert indirect postonly
 
-	timeout connect 5s
-	timeout http-request 3s
-	timeout server 25s
+	option forceclose
 	timeout http-keep-alive 1
 
 	stats admin if LOCALHOST
@@ -101,9 +97,7 @@ backend websocket
 	#rate-limit sessions 10
 
 	timeout queue 5s
-	timeout connect 5s
-	timeout http-request 3s
-	timeout server 1d
+	timeout http-request 5s
 
 backend http
 
@@ -112,9 +106,15 @@ backend http
 	server s1 $STATIC_1 check
 	server s2 $STATIC_2 check backup
 
-	timeout connect 5s
-	timeout http-request 1s
-	timeout server 25s
-	timeout http-keep-alive 1
+  timeout server 5s
+
+backend stats
+
+	# admin interface
+	stats enable
+	stats uri $ADMIN_URI
+	stats hide-version
+	#stats refresh 3s
+	stats admin if LOCALHOST
 
 _EOF_

@@ -5,7 +5,7 @@
 cat >.conf <<_EOF_
 
 user web;
-worker_processes 1;
+worker_processes $CORES;
 daemon off;
 
 pid $PWD/.pid;

@@ -3,4 +3,4 @@
 . ../conf
 ulimit -n 100000
 
-exec stud -n 1 -u stud -q dummy -f ${HTTPS_SERVER/:/,} -b ${HTTPS_TERMINATED_SERVER/:/,} --write-proxy $STUD_PARAMS -- site.pem 2>&1
+exec stud -n $CORES -u stud -q dummy -f ${HTTPS_SERVER/:/,} -b ${HTTPS_TERMINATED_SERVER/:/,} --write-proxy $STUD_PARAMS -- site.pem 2>&1

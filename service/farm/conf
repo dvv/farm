@@ -1,4 +1,6 @@
-ADMIN_URI=/haproxy?stats
+CORES=`grep 'processor	:' /proc/cpuinfo | wc -l`
+
+ADMIN_URI=/stats
 
 HTTP_SERVER=0.0.0.0:80
 HTTPS_SERVER=0.0.0.0:443
