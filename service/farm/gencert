@@ -1,0 +1,10 @@
+#!/bin/sh
+
+openssl genrsa -des3 -out /dev/stdout 1024 \
+  | openssl rsa -in /dev/stdin -out site.key
+openssl req -new -key site.key -out /dev/stdout \
+  | openssl x509 -req -days 1095 -in /dev/stdin -signkey site.key -out site.pem
+cat site.key >>site.pem
+openssl dhparam -rand - 1024 >>site.pem
+rm site.key
+chmod -0600 site.pem

@@ -1,0 +1,88 @@
+#
+# dvv's way to configure haproxy
+#
+
+global
+
+	maxconn 32768 # concurrent connections limit
+	log 127.0.0.1 local0 debug
+	#chroot /usr/share/haproxy
+	user haproxy
+	group haproxy
+	#daemon
+	# distribute the health checks with a bit of randomness
+	spread-checks 5
+	debug
+	#quiet
+
+defaults
+
+	log global
+	mode tcp
+	option abortonclose
+	no option accept-invalid-http-request
+	no option accept-invalid-http-response
+	option allbackups
+	#option dontlognull
+	option httpchk GET /haproxy?monitor
+	http-check disable-on-404
+#	option httplog
+	option tcplog
+	option log-separate-errors
+	option redispatch
+	retries 3
+	#?option splice-auto
+	option tcp-smart-connect
+
+frontend test-ws-cluster
+
+	# uncomment to disable temporarily
+	#disabled
+
+	maxconn 4096
+
+	#
+	# listen to vanilla HTTP
+	#
+	# CONFIG: edit address:port for HTTP
+	#
+	bind 0.0.0.0:80
+	#
+	#
+	#
+
+	#
+	# listen to HTTPS thru stud
+	#
+	# CONFIG: edit port for HTTPS internal port.
+	# the same value should be used in stud -b option
+	#
+	bind 127.0.0.1:65443 accept-proxy
+	#
+	#
+	#
+
+	# block bad guys
+	# N.B. should be tuned in production
+	#reqitarpit . if ! LOCALHOST
+
+	# monitor
+	monitor-uri /haproxy?alive
+	acl site_dead nbsrv(dynamic) lt 2
+	acl site_dead nbsrv(static)  lt 2
+	monitor fail if site_dead
+
+	# proxy HTTP
+	default_backend raw
+	timeout client 1d
+
+backend raw
+	server s1 127.0.0.1:3001 check
+	server s2 127.0.0.1:3002 check
+	server s3 127.0.0.1:3003 check
+	server s4 127.0.0.1:3004 check backup
+	balance leastconn
+	timeout connect 1d
+	timeout server 1d
+#option forwardfor except 127.0.0.1 header X-Forwarded-For
+#tcp-request content accept

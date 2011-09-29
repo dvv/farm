@@ -34,7 +34,8 @@ check:
 #bin: $(ZEROMQ)/src/.libs/libzmq.a
 #bin: $(MONGO)/bin/mongo $(HAPROXY)/haproxy $(STUD)/$(STUD_TARGET) $(REDIS)/src/redis-server $(RUNIT)/runsvdir $(LIGHTTPD)/src/lighttpd
 #bin: $(LIGHTTPD)/src/lighttpd
-bin: $(NGINX)/src/nginx
+bin: $(HAPROXY)/haproxy
+#bin: $(NGINX)/src/nginx
 #bin: $(STUD)/$(STUD_TARGET)
 
 $(HAPROXY)/haproxy: $(HAPROXY)
@@ -42,6 +43,7 @@ $(HAPROXY)/haproxy: $(HAPROXY)
 
 $(HAPROXY):
 	wget http://haproxy.1wt.eu/download/1.5/src/devel/$(HAPROXY).tar.gz -O - | tar -xzpf -
+	(cd $@ ; patch -Np1 < ../flash-policy.diff )
 
 $(STUD)/$(STUD_TARGET): $(STUD)
 	cp Makefile.stud $^

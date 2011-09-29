@@ -75,7 +75,7 @@ frontend farm
 	# proxy HTTP
 	#
 
-	default_backend rpc
+	default_backend http
 
 	#
 	# proxy RPC

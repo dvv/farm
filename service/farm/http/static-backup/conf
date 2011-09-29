@@ -28,7 +28,7 @@ http {
 
   server {
     server_name localhost;
-    listen 127.0.0.1:65440;
+    listen 127.0.0.1:65441;
     root /home/dvv/node_modules/connection/example/public;
     location / {
       index index.html;

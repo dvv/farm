@@ -1,0 +1,110 @@
+
+global
+
+	user haproxy
+	group haproxy
+
+	log 127.0.0.1 local0
+	#debug
+
+	maxconn 32768
+	spread-checks 5
+
+defaults
+
+	mode http
+	option abortonclose
+	no option accept-invalid-http-request
+	no option accept-invalid-http-response
+	option allbackups
+	option dontlognull
+	option forwardfor except 127.0.0.1 header X-Forwarded-For
+	option httpchk GET /haproxy?monitor
+	http-check disable-on-404
+	log global
+	option httplog
+	option log-separate-errors
+	option redispatch
+	retries 3
+	#?option splice-auto
+	option tcp-smart-connect
+
+	# backend defaults
+	default-server weight 50 maxqueue 16384 minconn 512 maxconn 16384 slowstart 1000 inter 5000 fastinter 500 downinter 10000 rise 2 fall 3
+	balance leastconn
+	fullconn 10000
+	option forceclose
+
+	# admin interface
+	stats enable
+	stats uri /haproxy?stats
+	stats hide-version
+	#stats refresh 3s
+	#stats admin if LOCALHOST
+
+frontend farm
+
+	# listen to HTTP
+	bind 0.0.0.0:80
+	# listen to SSL terminated by stud
+	bind 127.0.0.1:65443 accept-proxy
+
+	# assume static contents requested
+	default_backend http
+
+	# proxy RPC
+	acl is_rpc path_beg /rpc/
+	acl is_rpc path_beg /haproxy
+	use_backend rpc if is_rpc
+
+	# proxy WebSocket
+	acl is_websocket hdr(upgrade) -i websocket
+	acl is_websocket path_beg /ws/
+	use_backend websocket if is_websocket
+
+	## health monitoring. for upstream balancers?
+	#monitor-uri /haproxy?alive
+	#acl site_dead nbsrv(dynamic) lt 2
+	#acl site_dead nbsrv(static)  lt 2
+	#monitor fail if site_dead
+
+	timeout client 25s
+
+backend rpc
+
+	server s1 127.0.0.1:3001 check cookie s1
+	server s2 127.0.0.1:3002 check cookie s2
+	server s3 127.0.0.1:3003 check cookie s3
+	server s4 127.0.0.1:3004 check backup
+	cookie SERVERID insert indirect postonly
+
+	timeout connect 5s
+	timeout http-request 3s
+	timeout server 25s
+	timeout http-keep-alive 1
+
+backend websocket
+
+	server s1 127.0.0.1:3001 check cookie s1
+	server s2 127.0.0.1:3002 check cookie s2
+	server s3 127.0.0.1:3003 check cookie s3
+	server s4 127.0.0.1:3004 check backup
+	cookie SERVERID insert indirect nocache
+
+	#rate-limit sessions 10
+
+	timeout queue 5s
+	timeout connect 5s
+	timeout http-request 3s
+	timeout server 1d
+
+backend http
+
+	option httpchk GET /index.html
+	server s1 127.0.0.1:65440 check
+	server s2 127.0.0.1:65441 check backup
+
+	timeout connect 5s
+	timeout http-request 1s
+	timeout server 25s
+	timeout http-keep-alive 1

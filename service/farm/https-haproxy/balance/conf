@@ -1,0 +1,36 @@
+global
+
+	user haproxy
+	group haproxy
+	log 127.0.0.1 local0
+	debug
+	maxconn 32768
+	spread-checks 5
+
+defaults
+
+	mode tcp
+	option abortonclose
+	no option accept-invalid-http-request
+	no option accept-invalid-http-response
+	option allbackups
+	option dontlognull
+	log global
+	option tcplog
+	option log-separate-errors
+	option redispatch
+	retries 3
+	#option tcp-smart-connect
+
+listen https 0.0.0.0:443
+  server s1 127.0.0.1:65444 check
+  server s2 127.0.0.1:65445 check
+  server s3 127.0.0.1:65446 check
+  server s4 127.0.0.1:65447 check backup
+  balance leastconn
+  option ssl-hello-chk
+  fullconn 10000
+  default-server weight 50 maxqueue 16384 minconn 512 maxconn 16384 slowstart 1000 inter 5000 fastinter 500 downinter 10000 rise 2 fall 3
+  timeout client 25s
+  timeout connect 5s
+  timeout server 25s
