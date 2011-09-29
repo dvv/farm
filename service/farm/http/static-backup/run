@@ -1,2 +1,48 @@
 #!/bin/sh
-exec nginx -c $PWD/conf 2>&1
+#exec nginx -c $PWD/conf 2>&1
+
+. ../../conf
+cat >.conf <<_EOF_
+
+user web;
+worker_processes 1;
+daemon off;
+
+pid $PWD/.pid;
+
+#error_log  logs/error.log;
+#error_log  logs/error.log  notice;
+#error_log  logs/error.log  info;
+
+events {
+  worker_connections 16384;
+}
+
+http {
+
+  include mime.types;
+  default_type application/octet-stream;
+  #access_log /dev/stdout;
+  access_log /dev/null;
+
+  sendfile on;
+  #tcp_nopush on;
+
+  keepalive_timeout 70;
+
+  #gzip on;
+
+  server {
+    server_name localhost;
+    listen $STATIC_2;
+    root $STATIC_ROOT;
+    location / {
+      index $STATIC_INDEX;
+    }
+  }
+
+}
+
+_EOF_
+
+exec nginx -c $PWD/.conf 2>&1

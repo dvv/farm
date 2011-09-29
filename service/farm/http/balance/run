@@ -23,7 +23,6 @@ defaults
 	option allbackups
 	option dontlognull
 	option forwardfor except 127.0.0.1 header X-Forwarded-For
-	http-check disable-on-404
 	log global
 	option httplog
 	option log-separate-errors
@@ -43,7 +42,6 @@ defaults
 	stats uri $ADMIN_URI
 	stats hide-version
 	#stats refresh 3s
-	stats admin if LOCALHOST
 
 frontend farm
 
@@ -76,6 +74,7 @@ frontend farm
 backend rpc
 
 	option httpchk GET /haproxy?monitor
+	http-check disable-on-404
 	server s1 $WORKER_1 check cookie s1
 	server s2 $WORKER_2 check cookie s2
 	server s3 $WORKER_3 check cookie s3
@@ -87,9 +86,12 @@ backend rpc
 	timeout server 25s
 	timeout http-keep-alive 1
 
+	stats admin if LOCALHOST
+
 backend websocket
 
 	option httpchk GET /haproxy?monitor
+	http-check disable-on-404
 	server s1 $WORKER_1 check cookie s1
 	server s2 $WORKER_2 check cookie s2
 	server s3 $WORKER_3 check cookie s3
@@ -105,7 +107,8 @@ backend websocket
 
 backend http
 
-	option httpchk GET /index.html
+	option httpchk GET /$STATIC_INDEX
+	http-check disable-on-404
 	server s1 $STATIC_1 check
 	server s2 $STATIC_2 check backup
 

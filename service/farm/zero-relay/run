@@ -1,0 +1,5 @@
+#!/bin/sh
+
+. ../conf
+
+exec chpst -u web zero-relay 2>&1

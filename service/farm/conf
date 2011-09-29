@@ -1,7 +1,7 @@
 ADMIN_URI=/haproxy?stats
 
 HTTP_SERVER=0.0.0.0:80
-HTTPS_PORT=0.0.0.0:443
+HTTPS_SERVER=0.0.0.0:443
 HTTPS_TERMINATED_SERVER=127.0.0.1:65443
 
 STUD_PARAMS='-B 2048 -C 16384 -c DHE-RSA-AES256-SHA --ssl' # N.B. --ssl due to older chrome errors...

@@ -2,7 +2,7 @@
 #exec nginx -c $PWD/conf 2>&1
 
 . ../../conf
-cat >conf <<_EOF_
+cat >.conf <<_EOF_
 
 user web;
 worker_processes 1;
@@ -45,4 +45,4 @@ http {
 
 _EOF_
 
-exec nginx -c $PWD/conf 2>&1
+exec nginx -c $PWD/.conf 2>&1
