@@ -22,8 +22,8 @@ http {
 
   include mime.types;
   default_type application/octet-stream;
-  #access_log /dev/stdout;
   access_log /dev/null;
+  #access_log /dev/stdout;
 
   sendfile on;
   #tcp_nopush on;
@@ -38,7 +38,12 @@ http {
     root $STATIC_ROOT;
     location / {
       index $STATIC_INDEX;
+      #error_page 404 = @rpc;
     }
+    #location @rpc {
+    #  proxy_pass http://$WORKER_2;
+    #  proxy_redirect off;
+    #}
   }
 
 }

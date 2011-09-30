@@ -55,7 +55,7 @@ frontend farm
   # proxy WebSocket
   acl is_websocket hdr(upgrade) -i websocket
   acl is_websocket path_beg $WEBSOCKET_PREFIX
-  use_backend websocket if is_websocket
+  use_backend websockets if is_websocket
 
   # admin interface
   acl is_stats path_beg $ADMIN_URI
@@ -70,21 +70,7 @@ frontend farm
   #acl site_dead nbsrv(static)  lt 2
   #monitor fail if site_dead
 
-backend rpc
-
-  option httpchk GET /haproxy?monitor
-  http-check disable-on-404
-  server s1 $WORKER_1 check cookie s1
-  server s2 $WORKER_2 check cookie s2
-  server s3 $WORKER_3 check cookie s3
-  server s4 $WORKER_4 check backup
-  cookie SERVERID insert indirect postonly
-
-  timeout http-keep-alive 1
-
-  stats admin if LOCALHOST
-
-backend websocket
+backend websockets
 
   option httpchk GET /haproxy?monitor
   http-check disable-on-404
@@ -99,6 +85,20 @@ backend websocket
   timeout queue 5s
   timeout http-request 5s
   no option forceclose
+
+backend rpc
+
+  option httpchk GET /haproxy?monitor
+  http-check disable-on-404
+  server s1 $WORKER_1 check cookie s1
+  server s2 $WORKER_2 check cookie s2
+  server s3 $WORKER_3 check cookie s3
+  server s4 $WORKER_4 check backup
+  cookie SERVERID insert indirect postonly
+
+  timeout http-keep-alive 1
+
+  stats admin if LOCALHOST
 
 backend http
 
