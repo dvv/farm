@@ -7,12 +7,12 @@ Supports socket.io. Serves permissive Flash Sockets Policy.
 
 ## How to Install
 
-    apt-get install runit libev-dev libssl-dev
+    apt-get install runit libev-dev libssl-dev uuid-dev
     npm install farm
 
 Go to ~/node_modules/farm and run
 
-Now you have haproxy listening to :80 for HTTP and :443 for HTTPS.
+Now you have haproxy listening to :80 for HTTP and :65443 for HTTPS terminated by stud listening to :443.
 
 ## How to use
 

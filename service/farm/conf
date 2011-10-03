@@ -8,7 +8,7 @@ HTTPS_TERMINATED_SERVER=127.0.0.1:65443
 
 STUD_PARAMS='-B 2048 -C 16384 -c DHE-RSA-AES256-SHA --ssl' # N.B. --ssl due to older chrome errors...
 
-STATIC_ROOT=/home/dvv/node_modules/connection/example/public
+STATIC_ROOT=/home/dvv/node_modules/la-scala/example/public
 STATIC_INDEX=index.html
 STATIC_1=127.0.0.1:65440
 STATIC_2=127.0.0.1:65441
