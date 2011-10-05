@@ -33,7 +33,8 @@ check:
 #bin: $(ZEROMQNODE)/binding.node
 #bin: $(ZEROMQ)/src/.libs/libzmq.a
 #bin: $(MONGO)/bin/mongo $(HAPROXY)/haproxy $(STUD)/$(STUD_TARGET) $(REDIS)/src/redis-server $(RUNIT)/runsvdir $(LIGHTTPD)/src/lighttpd
-bin: $(LIGHTTPD)/src/lighttpd
+bin: $(MONGO)/bin/mongo 
+#bin: $(LIGHTTPD)/src/lighttpd
 #bin: $(HAPROXY)/haproxy
 #bin: $(NGINX)/src/nginx
 #bin: $(STUD)/$(STUD_TARGET)
