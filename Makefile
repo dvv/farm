@@ -1,7 +1,7 @@
 #
-# build haproxy and stunnel
+# build haproxy and stud
 #
-# dronnikov@gmail.com 2011
+# dronnikov@gmail.com 2012
 #
 
 HAPROXY=haproxy-1.5-dev7
